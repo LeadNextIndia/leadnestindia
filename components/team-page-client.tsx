@@ -216,7 +216,7 @@ export function TeamPageClient({
                     </select>
                   </td>
                   <td className="px-4 py-2.5 text-gray-500 text-xs">
-                    {new Date(m.createdAt).toLocaleDateString()}
+                    {new Date(m.createdAt).toLocaleDateString('en-GB')}
                   </td>
                   <td className="px-4 py-2.5 text-right">
                     <button

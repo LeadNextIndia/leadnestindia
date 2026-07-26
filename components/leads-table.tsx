@@ -252,7 +252,7 @@ export function LeadsTable({
               {filtered.map((l) => (
                 <tr key={l.id} className="border-b border-gray-100 dark:border-[var(--border)] hover:bg-gray-50/70 dark:hover:bg-[var(--surface-muted)]">
                   <td className="px-3 py-2 whitespace-nowrap text-gray-500 dark:text-gray-400">
-                    {new Date(l.created_at).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}
+                    {new Date(l.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap"><StatusBadge status={l.status} /></td>
                   <td className="px-3 py-2 whitespace-nowrap text-gray-700 dark:text-gray-300 text-xs">

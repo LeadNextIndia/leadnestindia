@@ -349,7 +349,7 @@ function ActivityItem({
   emailByUser: Map<string, string | null>
 }) {
   const who = a.user_email ?? (a.user_id ? emailByUser.get(a.user_id) ?? 'someone' : 'system')
-  const when = new Date(a.created_at).toLocaleString(undefined, {
+  const when = new Date(a.created_at).toLocaleString('en-GB', {
     day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
   })
   return (
