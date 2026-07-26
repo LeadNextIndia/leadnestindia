@@ -1,26 +1,64 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f9fafb;
+  --foreground: #111827;
+  --surface: #ffffff;
+  --surface-muted: #f3f4f6;
+  --border: #e5e7eb;
+  --text-muted: #6b7280;
+}
+
+.dark {
+  --background: #0b0f17;
+  --foreground: #e5e7eb;
+  --surface: #131a24;
+  --surface-muted: #1a2230;
+  --border: #263041;
+  --text-muted: #94a3b8;
+  color-scheme: dark;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border-token: var(--border);
+  --color-text-muted: var(--text-muted);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
+html, body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Print: show only the invoice, on white, with tight margins.
+   Save-as-PDF from the browser's print dialog gives the download. */
+@media print {
+  @page { size: A4; margin: 12mm; }
+  html, body {
+    background: white !important;
+    color: black !important;
+  }
+  /* Hide layout chrome: sidebar, header, KPIs, table, everything with .print\:hidden */
+  aside, header, nav, .print\:hidden {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+  #invoice-print-area {
+    box-shadow: none !important;
+    border: 0 !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
 }
