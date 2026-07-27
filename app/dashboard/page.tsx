@@ -7,7 +7,7 @@ import type { SavedView } from '@/components/saved-views-menu'
 import type { Member } from '@/components/lead-edit-modal'
 import type { LeadFilter } from '@/lib/filters'
 import { type Features, withDefaults } from '@/lib/features'
-import { PlusIcon } from '@/components/icons'
+import { NewLeadButton } from '@/components/new-lead-button'
 
 type Lead = {
   id: string
@@ -47,6 +47,7 @@ export default async function LeadsPage() {
     { data: savedViewsRaw },
     { data: tenantRow },
     { data: membersRaw },
+    { data: columnPrefRow },
   ] = await Promise.all([
     supabase
       .from('leads')
@@ -73,6 +74,15 @@ export default async function LeadsPage() {
           .select('user_id,email')
           .eq('tenant_id', session.tenantId)
       : Promise.resolve({ data: [] as unknown[] }),
+    session?.tenantId && session.user
+      ? supabase
+          .from('user_column_prefs')
+          .select('visible_fields')
+          .eq('user_id', session.user.id)
+          .eq('tenant_id', session.tenantId)
+          .eq('view_key', 'leads')
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ])
 
   const features: Features = withDefaults(
@@ -141,10 +151,7 @@ export default async function LeadsPage() {
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">All customer inquiries for your store.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/dashboard/new"
-            className="inline-flex items-center gap-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md px-3 py-1.5 transition">
-            <PlusIcon className="w-4 h-4" /> New Lead
-          </Link>
+          <NewLeadButton />
         </div>
       </div>
 
@@ -184,6 +191,9 @@ export default async function LeadsPage() {
         showActivity={activityEnabled}
         members={members}
         currentUserId={currentUserId}
+        initialVisibleColumns={
+          (columnPrefRow as { visible_fields?: string[] } | null)?.visible_fields ?? null
+        }
       />
     </div>
   )

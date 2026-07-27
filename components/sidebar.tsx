@@ -48,8 +48,8 @@ export function Sidebar({ role, isSuperadmin, features }: Props) {
   if (isAdmin && feat.export) {
     items.push({ label: 'Export', href: '/api/export', icon: DownloadIcon, external: true })
   }
-  if (isAdmin && feat.settings) {
-    items.push({ label: 'Settings', href: '/dashboard/settings', icon: SettingsIcon, soon: true })
+  if (isAdmin) {
+    items.push({ label: 'Settings', href: '/dashboard/settings', icon: SettingsIcon })
   }
   if (isSuperadmin) {
     items.push({ label: 'Superadmin', href: '/superadmin', icon: ShieldIcon })

@@ -23,11 +23,22 @@ export default async function SuperadminLayout({
               <div className="text-[10px] text-gray-500 uppercase tracking-wider">Platform Control</div>
             </div>
           </Link>
+          <nav className="ml-4 flex items-center gap-1">
+            <Link href="/superadmin" className="text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[var(--surface-muted)] rounded px-2 py-1">
+              Tenants
+            </Link>
+            <Link href="/superadmin/support" className="text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[var(--surface-muted)] rounded px-2 py-1">
+              Support
+            </Link>
+            <Link href="/superadmin/user-requests" className="text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[var(--surface-muted)] rounded px-2 py-1">
+              User requests
+            </Link>
+          </nav>
           <Link
             href="/dashboard"
-            className="ml-4 text-xs text-gray-500 hover:text-gray-800 border border-gray-200 rounded px-2 py-1"
+            className="ml-4 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-200 dark:border-[var(--border)] rounded px-2 py-1"
           >
-            ← Back to dashboard
+            ← Dashboard
           </Link>
         </div>
 

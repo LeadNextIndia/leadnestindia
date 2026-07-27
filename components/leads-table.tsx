@@ -8,6 +8,7 @@ import { LeadsCharts } from './leads-charts'
 import { SavedViewsMenu, type SavedView } from './saved-views-menu'
 import { applyFilter, isEmptyFilter, serializeFilter, type LeadFilter } from '@/lib/filters'
 import { LeadEditModal, type EditableLead, type Member, type FieldDef } from './lead-edit-modal'
+import { ColumnPicker } from './column-picker'
 
 type Lead = EditableLead & {
   created_at: string
@@ -25,6 +26,7 @@ type Props = {
   showActivity: boolean
   members: Member[]
   currentUserId: string | null
+  initialVisibleColumns?: string[] | null
 }
 
 const statusStyles: Record<string, string> = {
@@ -84,11 +86,26 @@ export function LeadsTable({
   showActivity,
   members,
   currentUserId,
+  initialVisibleColumns,
 }: Props) {
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [assigneeFilter, setAssigneeFilter] = useState<'all' | 'mine' | 'unassigned'>('all')
   const [editingLead, setEditingLead] = useState<Lead | null>(null)
+  const [visibleColumnPref, setVisibleColumnPref] = useState<string[] | null>(
+    initialVisibleColumns ?? null
+  )
+
+  const visibleColumns = useMemo(() => {
+    if (!visibleColumnPref) return columns
+    const allow = new Set(visibleColumnPref)
+    return columns.filter((c) => allow.has(c))
+  }, [columns, visibleColumnPref])
+
+  const columnPickerOptions = useMemo(() => {
+    const labelByKey = new Map(fieldDefs.map((f) => [f.key, f.label]))
+    return columns.map((k) => ({ key: k, label: labelByKey.get(k) ?? k }))
+  }, [columns, fieldDefs])
 
   const [advancedFilter, setAdvancedFilter] = useState<LeadFilter>({ conditions: [] })
   const [showFilterBuilder, setShowFilterBuilder] = useState(false)
@@ -231,7 +248,15 @@ export function LeadsTable({
               ))}
             </div>
           )}
-          <div className="ml-auto text-xs text-gray-500 dark:text-gray-400">{filtered.length} of {leads.length}</div>
+          <div className="ml-auto flex items-center gap-3">
+            <span className="text-xs text-gray-500 dark:text-gray-400">{filtered.length} of {leads.length}</span>
+            <ColumnPicker
+              viewKey="leads"
+              options={columnPickerOptions}
+              value={visibleColumnPref}
+              onChange={setVisibleColumnPref}
+            />
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -242,7 +267,7 @@ export function LeadsTable({
                 <th className="text-left font-medium px-3 py-2 whitespace-nowrap">Status</th>
                 <th className="text-left font-medium px-3 py-2 whitespace-nowrap">Assigned</th>
                 <th className="text-left font-medium px-3 py-2 whitespace-nowrap">Follow-up</th>
-                {columns.map((c) => (
+                {visibleColumns.map((c) => (
                   <th key={c} className="text-left font-medium px-3 py-2 whitespace-nowrap capitalize">{c.replace(/_/g, ' ')}</th>
                 ))}
                 {canEdit && <th className="px-3 py-2" />}
@@ -263,7 +288,7 @@ export function LeadsTable({
                   <td className="px-3 py-2 whitespace-nowrap">
                     <FollowUpBadge iso={l.follow_up_at} />
                   </td>
-                  {columns.map((c) => (
+                  {visibleColumns.map((c) => (
                     <td key={c} className="px-3 py-2 whitespace-nowrap text-gray-800 dark:text-gray-200">
                       {String((l.custom_data as Record<string, unknown> | null)?.[c] ?? '—')}
                     </td>
@@ -280,7 +305,7 @@ export function LeadsTable({
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={columns.length + (canEdit ? 5 : 4)} className="px-3 py-8 text-center text-sm text-gray-400 dark:text-gray-500">
+                  <td colSpan={visibleColumns.length + (canEdit ? 5 : 4)} className="px-3 py-8 text-center text-sm text-gray-400 dark:text-gray-500">
                     {leads.length === 0 ? 'No leads yet — click New Lead to add one.' : 'No leads match your filters.'}
                   </td>
                 </tr>

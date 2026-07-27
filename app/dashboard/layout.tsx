@@ -5,6 +5,7 @@ import { Sidebar } from '@/components/sidebar'
 import { LogoutButton } from '@/components/logout-button'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { type Features, withDefaults } from '@/lib/features'
+import { getTenantBranding } from '@/lib/branding'
 
 export default async function DashboardLayout({
   children,
@@ -34,18 +35,22 @@ export default async function DashboardLayout({
     )
   }
 
-  // Fetch tenant name + feature flags (null for superadmins without a tenant)
+  // Fetch tenant features + branding (null for superadmins without a tenant)
   let features: Features | null = null
   let tenantName: string | null = null
+  let backgroundUrl: string | null = null
   if (session.tenantId) {
     const supabase = await createClient()
     const { data } = await supabase
       .from('tenants')
-      .select('name, features')
+      .select('features')
       .eq('id', session.tenantId)
       .maybeSingle()
     features = withDefaults(data?.features as Partial<Features> | null)
-    tenantName = (data?.name as string | null) ?? null
+
+    const branding = await getTenantBranding(session.tenantId)
+    tenantName = branding.displayName
+    backgroundUrl = branding.backgroundUrl
   }
 
   const initial = (session.user.email ?? '?').charAt(0).toUpperCase()
@@ -94,7 +99,28 @@ export default async function DashboardLayout({
           </div>
         </header>
 
-        <main className="flex-1 p-6 overflow-x-hidden">{children}</main>
+        <main className="flex-1 p-6 overflow-x-hidden relative isolate">
+          {backgroundUrl && (
+            <>
+              <div
+                aria-hidden
+                className="absolute inset-0 -z-20 pointer-events-none"
+                style={{
+                  backgroundImage: `url("${backgroundUrl}")`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundAttachment: 'fixed',
+                  backgroundRepeat: 'no-repeat',
+                }}
+              />
+              <div
+                aria-hidden
+                className="absolute inset-0 -z-10 pointer-events-none bg-white/88 dark:bg-[var(--background)]/88"
+              />
+            </>
+          )}
+          {children}
+        </main>
       </div>
     </div>
   )
