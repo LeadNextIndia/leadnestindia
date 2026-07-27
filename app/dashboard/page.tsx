@@ -59,10 +59,12 @@ export default async function LeadsPage() {
       .eq('active', true)
       .order('sort_order')
       .order('created_at'),
-    session && !session.isSuperadmin && session.tenantId
+    session?.tenantId && session.user
       ? supabase
           .from('saved_views')
           .select('id,name,filter,created_at')
+          .eq('tenant_id', session.tenantId)
+          .eq('user_id', session.user.id)
           .order('created_at', { ascending: false })
       : Promise.resolve({ data: [] as unknown[] }),
     session?.tenantId
