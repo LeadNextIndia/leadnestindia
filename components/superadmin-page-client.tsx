@@ -53,8 +53,8 @@ export function SuperadminPageClient({ tenants }: { tenants: TenantRow[] }) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Tenants</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Tenants</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
             {tenants.length} {tenants.length === 1 ? 'company' : 'companies'} on the platform
           </p>
         </div>
@@ -71,8 +71,8 @@ export function SuperadminPageClient({ tenants }: { tenants: TenantRow[] }) {
         <p
           className={
             msg.kind === 'ok'
-              ? 'text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-3 py-2'
-              : 'text-sm text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2'
+              ? 'text-sm text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-md px-3 py-2'
+              : 'text-sm text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-md px-3 py-2'
           }
         >
           {msg.text}
@@ -82,39 +82,39 @@ export function SuperadminPageClient({ tenants }: { tenants: TenantRow[] }) {
       {showForm && (
         <form
           onSubmit={onboard}
-          className="rounded-lg border border-gray-200 bg-white p-5 space-y-4"
+          className="rounded-lg border border-gray-200 dark:border-[var(--border)] bg-white dark:bg-[var(--surface)] p-5 space-y-4"
         >
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
+          <div className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-gray-100">
             <BuildingIcon className="w-4 h-4 text-indigo-600" />
             Onboard a new customer company
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Company name</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Company name</label>
               <input
                 type="text"
                 required
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 placeholder="Acme Retail Pvt Ltd"
-                className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full border border-gray-200 dark:border-[var(--border)] rounded-md px-3 py-2 text-sm bg-white dark:bg-[var(--surface)] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">First admin email</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">First admin email</label>
               <input
                 type="email"
                 required
                 value={adminEmail}
                 onChange={(e) => setAdminEmail(e.target.value)}
                 placeholder="owner@acme.com"
-                className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full border border-gray-200 dark:border-[var(--border)] rounded-md px-3 py-2 text-sm bg-white dark:bg-[var(--surface)] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
           </div>
 
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             We&apos;ll create the company and email the admin a link to set their password.
           </p>
 
@@ -129,7 +129,7 @@ export function SuperadminPageClient({ tenants }: { tenants: TenantRow[] }) {
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="border border-gray-200 rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="border border-gray-200 dark:border-[var(--border)] rounded-md px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-[var(--surface-muted)]"
             >
               Cancel
             </button>
@@ -137,9 +137,9 @@ export function SuperadminPageClient({ tenants }: { tenants: TenantRow[] }) {
         </form>
       )}
 
-      <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+      <div className="rounded-lg border border-gray-200 dark:border-[var(--border)] bg-white dark:bg-[var(--surface)] overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+          <thead className="bg-gray-50 dark:bg-[var(--surface-muted)] text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
             <tr>
               <th className="text-left px-4 py-2 font-medium">Company</th>
               <th className="text-left px-4 py-2 font-medium">Members</th>
@@ -150,7 +150,7 @@ export function SuperadminPageClient({ tenants }: { tenants: TenantRow[] }) {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {tenants.map((t) => (
-              <tr key={t.id} className="hover:bg-gray-50/60">
+              <tr key={t.id} className="hover:bg-gray-50/60 dark:hover:bg-[var(--surface-muted)]">
                 <td className="px-4 py-2.5 text-gray-900 font-medium">{t.name}</td>
                 <td className="px-4 py-2.5 text-gray-700">{t.memberCount}</td>
                 <td className="px-4 py-2.5 text-gray-700">{t.adminCount}</td>

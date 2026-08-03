@@ -56,6 +56,9 @@ db/phase3.sql   ← per-tenant feature flags, field-definition mgmt
 db/phase4.sql   ← saved views
 db/phase5.sql   ← assignment, follow-ups, lead_activity timeline
 db/phase6.sql   ← GST-compliant invoices
+db/phase7.sql   ← branding (display_name + background) + support_tickets +
+                  user_creation_requests + user_column_prefs + audit_log +
+                  Supabase Storage bucket "branding" with tenant-scoped RLS
 ```
 All files are idempotent — safe to re-run. Apply in staging first, then prod.
 

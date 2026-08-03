@@ -15,18 +15,18 @@ export default async function DashboardLayout({
 
   if (!session.tenantId && !session.isSuperadmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
-        <div className="max-w-md w-full rounded-lg border border-gray-200 bg-white p-8 text-center">
-          <div className="mx-auto w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 mb-4">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[var(--background)] px-6">
+        <div className="max-w-md w-full rounded-lg border border-gray-200 dark:border-[var(--border)] bg-white dark:bg-[var(--surface)] p-8 text-center">
+          <div className="mx-auto w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-500/15 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
               className="w-5 h-5">
               <circle cx="12" cy="12" r="10" /><path d="M12 8v4" /><path d="M12 16h.01" />
             </svg>
           </div>
-          <h1 className="text-lg font-semibold text-gray-900">You&apos;re not part of a store yet</h1>
-          <p className="text-sm text-gray-500 mt-2">
-            Your account (<span className="font-medium text-gray-700">{session.user.email}</span>) exists,
+          <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">You&apos;re not part of a store yet</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            Your account (<span className="font-medium text-gray-700 dark:text-gray-200">{session.user.email}</span>) exists,
             but no store admin has added you yet.
           </p>
           <div className="mt-6"><LogoutButton /></div>
@@ -57,7 +57,12 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen flex bg-gray-50 dark:bg-[var(--background)]">
-      <Sidebar role={session.role} isSuperadmin={session.isSuperadmin} features={features} />
+      <Sidebar
+        role={session.role}
+        isSuperadmin={session.isSuperadmin}
+        features={features}
+        tenantName={tenantName}
+      />
 
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 border-b border-gray-200 dark:border-[var(--border)] bg-white dark:bg-[var(--surface)] flex items-center justify-between px-6">

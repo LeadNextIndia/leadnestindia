@@ -78,13 +78,13 @@ export default async function TenantConfigPage({ params }: Props) {
       <div className="flex items-center gap-3">
         <Link
           href="/superadmin"
-          className="text-xs text-gray-500 hover:text-gray-800 border border-gray-200 rounded px-2 py-1"
+          className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-200 dark:border-[var(--border)] rounded px-2 py-1"
         >
           ← All tenants
         </Link>
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">{tenantBase.name}</h1>
-          <p className="text-xs text-gray-500">Tenant ID: {tenantId}</p>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{tenantBase.name}</h1>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Tenant ID: {tenantId}</p>
         </div>
       </div>
 
@@ -100,7 +100,7 @@ export default async function TenantConfigPage({ params }: Props) {
       </div>
 
       {!schemaReady && (
-        <div className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 space-y-1">
+        <div className="text-sm text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-md px-3 py-2 space-y-1">
           <div>
             <strong>Schema not ready.</strong> These queries failed — run <code className="font-mono">db/phase3.sql</code> in the Supabase SQL editor:
           </div>
@@ -124,9 +124,9 @@ export default async function TenantConfigPage({ params }: Props) {
 
 function StatCard({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white px-4 py-3">
-      <div className="text-[10px] uppercase tracking-wider text-gray-500">{label}</div>
-      <div className="text-lg font-semibold text-gray-900 mt-0.5">{value}</div>
+    <div className="rounded-lg border border-gray-200 dark:border-[var(--border)] bg-white dark:bg-[var(--surface)] px-4 py-3">
+      <div className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">{label}</div>
+      <div className="text-lg font-semibold text-gray-900 dark:text-gray-100 mt-0.5">{value}</div>
     </div>
   )
 }

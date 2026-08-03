@@ -10,6 +10,7 @@ import {
   ShieldIcon,
   SparkleIcon,
   FileIcon,
+  FieldsIcon,
 } from './icons'
 import { cn } from '@/lib/utils'
 
@@ -21,24 +22,36 @@ type NavItem = {
   icon: React.ComponentType<{ className?: string }>
   external?: boolean
   soon?: boolean
+  matchExact?: boolean
 }
 
 type Props = {
   role: 'admin' | 'user' | null
   isSuperadmin: boolean
   features: Features | null
+  tenantName: string | null
 }
 
-export function Sidebar({ role, isSuperadmin, features }: Props) {
+export function Sidebar({ role, isSuperadmin, features, tenantName }: Props) {
   const pathname = usePathname()
 
   const isAdmin = role === 'admin' || isSuperadmin
-  const feat = features ?? { team: true, export: true, settings: false, analytics: false, invoicing: false, activity: false }
+  const feat = features ?? {
+    team: true, export: true, settings: false,
+    analytics: false, invoicing: false, activity: false,
+    dashboard: true, field_labels: false,
+  }
 
-  const items: NavItem[] = [
-    { label: 'Leads', href: '/dashboard', icon: LayoutIcon },
-  ]
+  // Order: Leads → Dashboard → Field labels → Invoices → Team → Export → Settings → Superadmin
+  const items: NavItem[] = []
+  items.push({ label: 'Leads', href: '/dashboard', icon: LayoutIcon, matchExact: true })
 
+  if (feat.dashboard || isSuperadmin) {
+    items.push({ label: 'Dashboard', href: '/dashboard/overview', icon: LayoutIcon })
+  }
+  if (isAdmin && (feat.field_labels || isSuperadmin)) {
+    items.push({ label: 'Field labels', href: '/dashboard/field-labels', icon: FieldsIcon })
+  }
   if (feat.invoicing || isSuperadmin) {
     items.push({ label: 'Invoices', href: '/dashboard/invoices', icon: FileIcon })
   }
@@ -58,18 +71,36 @@ export function Sidebar({ role, isSuperadmin, features }: Props) {
   return (
     <aside className="w-56 border-r border-gray-200 dark:border-[var(--border)] bg-white dark:bg-[var(--surface)] flex flex-col">
       <div className="h-14 flex items-center gap-2 px-4 border-b border-gray-200 dark:border-[var(--border)]">
-        <div className="w-7 h-7 rounded-md bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white">
+        <div className="w-7 h-7 rounded-md bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white flex-shrink-0">
           <SparkleIcon className="w-4 h-4" />
         </div>
-        <div className="leading-tight">
-          <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">LeadNest</div>
-          <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider">India</div>
+        <div className="leading-tight min-w-0">
+          {isSuperadmin ? (
+            <>
+              <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">LeadNest</div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider">India</div>
+            </>
+          ) : tenantName ? (
+            <>
+              <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate" title={tenantName}>
+                {tenantName}
+              </div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider">Workspace</div>
+            </>
+          ) : (
+            <>
+              <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Your workspace</div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider">Company</div>
+            </>
+          )}
         </div>
       </div>
 
       <nav className="flex-1 px-2 py-3 space-y-0.5">
         {items.map((item) => {
-          const active = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
+          const active = item.matchExact
+            ? pathname === item.href
+            : pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
           const Icon = item.icon
           const content = (
             <>

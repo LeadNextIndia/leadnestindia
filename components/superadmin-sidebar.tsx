@@ -2,7 +2,13 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ShieldIcon, UsersIcon, MailIcon, LayoutIcon } from './icons'
+import {
+  ShieldIcon,
+  UsersIcon,
+  MailIcon,
+  LayoutIcon,
+  SparkleIcon,
+} from './icons'
 import { cn } from '@/lib/utils'
 
 type Item = {
@@ -35,7 +41,22 @@ export function SuperadminSidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 px-2 py-3 space-y-0.5">
+      {/* Prominent switch-to-my-company link (a superadmin often also runs a tenant) */}
+      <div className="px-2 pt-3">
+        <Link
+          href="/dashboard"
+          className="group flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition"
+        >
+          <SparkleIcon className="w-4 h-4" />
+          <span className="flex-1 font-medium">Go to my dashboard</span>
+        </Link>
+      </div>
+
+      <div className="px-3 pt-4 pb-1 text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500">
+        Platform
+      </div>
+
+      <nav className="flex-1 px-2 pb-3 space-y-0.5">
         {items.map((item) => {
           const active = item.matchExact
             ? pathname === item.href
@@ -68,10 +89,10 @@ export function SuperadminSidebar() {
 
       <div className="px-2 py-3 border-t border-gray-200 dark:border-[var(--border)]">
         <Link
-          href="/dashboard"
+          href="/"
           className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[var(--surface-muted)]"
         >
-          ← Back to dashboard
+          ↗ Public landing page
         </Link>
       </div>
     </aside>

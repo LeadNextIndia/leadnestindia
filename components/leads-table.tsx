@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react'
 import { SearchIcon, PencilIcon, DownloadIcon } from './icons'
 import { cn } from '@/lib/utils'
 import { LeadsFilterBuilder } from './leads-filter-builder'
-import { LeadsCharts } from './leads-charts'
 import { SavedViewsMenu, type SavedView } from './saved-views-menu'
 import { applyFilter, isEmptyFilter, serializeFilter, type LeadFilter } from '@/lib/filters'
 import { LeadEditModal, type EditableLead, type Member, type FieldDef } from './lead-edit-modal'
@@ -27,6 +26,7 @@ type Props = {
   members: Member[]
   currentUserId: string | null
   initialVisibleColumns?: string[] | null
+  manageFieldsHref?: string
 }
 
 const statusStyles: Record<string, string> = {
@@ -87,6 +87,7 @@ export function LeadsTable({
   members,
   currentUserId,
   initialVisibleColumns,
+  manageFieldsHref,
 }: Props) {
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -109,7 +110,6 @@ export function LeadsTable({
 
   const [advancedFilter, setAdvancedFilter] = useState<LeadFilter>({ conditions: [] })
   const [showFilterBuilder, setShowFilterBuilder] = useState(false)
-  const [showCharts, setShowCharts] = useState(true)
   const [savedViews, setSavedViews] = useState<SavedView[]>(initialViews)
   const [activeViewId, setActiveViewId] = useState<string | null>(null)
 
@@ -143,12 +143,6 @@ export function LeadsTable({
 
   return (
     <>
-      {showAnalytics && showCharts && (
-        <div className="mb-4">
-          <LeadsCharts leads={filtered} />
-        </div>
-      )}
-
       <div className="rounded-lg border border-gray-200 dark:border-[var(--border)] bg-white dark:bg-[var(--surface)] overflow-hidden">
         {/* Toolbar row 1: search, saved views, actions */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 px-3 py-2 border-b border-gray-200 dark:border-[var(--border)] bg-gray-50/50 dark:bg-[var(--surface-muted)]">
@@ -173,12 +167,6 @@ export function LeadsTable({
           <div className="ml-auto flex items-center gap-2">
             {showAnalytics && (
               <>
-                <button
-                  onClick={() => setShowCharts((v) => !v)}
-                  className="text-xs border border-gray-200 dark:border-[var(--border)] bg-white dark:bg-[var(--surface)] rounded-md px-2.5 py-1 hover:bg-gray-50 dark:hover:bg-[var(--surface-muted)]"
-                >
-                  {showCharts ? 'Hide charts' : 'Show charts'}
-                </button>
                 <button
                   onClick={() => setShowFilterBuilder((v) => !v)}
                   className={cn(
@@ -255,6 +243,7 @@ export function LeadsTable({
               options={columnPickerOptions}
               value={visibleColumnPref}
               onChange={setVisibleColumnPref}
+              manageFieldsHref={manageFieldsHref}
             />
           </div>
         </div>
@@ -267,9 +256,12 @@ export function LeadsTable({
                 <th className="text-left font-medium px-3 py-2 whitespace-nowrap">Status</th>
                 <th className="text-left font-medium px-3 py-2 whitespace-nowrap">Assigned</th>
                 <th className="text-left font-medium px-3 py-2 whitespace-nowrap">Follow-up</th>
-                {visibleColumns.map((c) => (
-                  <th key={c} className="text-left font-medium px-3 py-2 whitespace-nowrap capitalize">{c.replace(/_/g, ' ')}</th>
-                ))}
+                {visibleColumns.map((c) => {
+                  const label = fieldDefs.find((f) => f.key === c)?.label ?? c.replace(/_/g, ' ')
+                  return (
+                    <th key={c} className="text-left font-medium px-3 py-2 whitespace-nowrap">{label}</th>
+                  )
+                })}
                 {canEdit && <th className="px-3 py-2" />}
               </tr>
             </thead>

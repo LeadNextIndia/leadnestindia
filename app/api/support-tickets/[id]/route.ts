@@ -30,6 +30,19 @@ export async function PATCH(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: 'Resolution too long' }, { status: 400 })
   }
 
+  const admin = createAdminClient()
+
+  // Load the ticket first so we can (a) confirm it exists, (b) capture its tenant
+  // for the audit log. Returning early on missing avoids a silent no-op update.
+  const { data: existing, error: loadErr } = await admin
+    .from('support_tickets')
+    .select('id, tenant_id, status')
+    .eq('id', id)
+    .maybeSingle()
+
+  if (loadErr) return NextResponse.json({ error: 'Lookup failed' }, { status: 500 })
+  if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
   const updates: Record<string, unknown> = { status, updated_at: new Date().toISOString() }
   if (status === 'resolved' || status === 'closed') {
     updates.resolved_at = new Date().toISOString()
@@ -37,7 +50,6 @@ export async function PATCH(req: Request, ctx: Ctx) {
     if (resolution) updates.resolution = resolution
   }
 
-  const admin = createAdminClient()
   const { data, error } = await admin
     .from('support_tickets')
     .update(updates)
@@ -45,14 +57,15 @@ export async function PATCH(req: Request, ctx: Ctx) {
     .select('id, status, resolved_at, resolution')
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: 'Update failed' }, { status: 500 })
 
   await admin.from('audit_log').insert({
     actor_user_id: session.user.id,
+    tenant_id: existing.tenant_id,
     action: 'support_ticket.status_change',
     target_type: 'support_tickets',
     target_id: id,
-    metadata: { status, resolution: resolution ?? null },
+    metadata: { from_status: existing.status, to_status: status, resolution: resolution ?? null },
   })
 
   return NextResponse.json(data)

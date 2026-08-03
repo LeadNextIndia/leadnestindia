@@ -9,11 +9,14 @@ export function ColumnPicker({
   options,
   value,
   onChange,
+  manageFieldsHref,
 }: {
   viewKey: string
   options: Option[]
   value: string[] | null // null = "show all"
   onChange: (visible: string[] | null) => void
+  /** If set, shows a "Manage fields" link at the bottom (for superadmins). */
+  manageFieldsHref?: string
 }) {
   const [open, setOpen] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(
@@ -202,22 +205,34 @@ export function ColumnPicker({
               </p>
             )}
 
-            <div className="px-5 py-3 border-t border-gray-200 dark:border-[var(--border)] flex justify-end gap-2 bg-gray-50/50 dark:bg-[var(--surface-muted)]">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="text-sm px-3 py-1.5 rounded-md border border-gray-200 dark:border-[var(--border)] text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-[var(--surface)]"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={save}
-                disabled={saving}
-                className="text-sm px-4 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-60 font-medium"
-              >
-                {saving ? 'Saving…' : 'Save'}
-              </button>
+            <div className="px-5 py-3 border-t border-gray-200 dark:border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-gray-50/50 dark:bg-[var(--surface-muted)]">
+              {manageFieldsHref ? (
+                <a
+                  href={manageFieldsHref}
+                  className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  Manage / delete fields →
+                </a>
+              ) : (
+                <span />
+              )}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="text-sm px-3 py-1.5 rounded-md border border-gray-200 dark:border-[var(--border)] text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-[var(--surface)]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={save}
+                  disabled={saving}
+                  className="text-sm px-4 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-60 font-medium"
+                >
+                  {saving ? 'Saving…' : 'Save'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

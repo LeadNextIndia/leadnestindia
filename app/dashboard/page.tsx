@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { getSession } from '@/lib/authz'
-import Link from 'next/link'
 import { KpiCard } from '@/components/kpi-card'
 import { LeadsTable } from '@/components/leads-table'
 import type { SavedView } from '@/components/saved-views-menu'
@@ -26,16 +25,6 @@ type FieldDef = {
   options: string[] | null
 }
 
-function getWeekAgoMs() {
-  return Date.now() - 7 * 24 * 60 * 60 * 1000
-}
-
-function startOfDayMs() {
-  const d = new Date()
-  d.setHours(0, 0, 0, 0)
-  return d.getTime()
-}
-
 export default async function LeadsPage() {
   const [session, supabase] = await Promise.all([getSession(), createClient()])
 
@@ -49,16 +38,25 @@ export default async function LeadsPage() {
     { data: membersRaw },
     { data: columnPrefRow },
   ] = await Promise.all([
-    supabase
-      .from('leads')
-      .select('id,created_at,status,custom_data,assigned_to,follow_up_at')
-      .order('created_at', { ascending: false }),
-    supabase
-      .from('field_definitions')
-      .select('key,label,type,required,options')
-      .eq('active', true)
-      .order('sort_order')
-      .order('created_at'),
+    // Every tenant-scoped query MUST explicitly filter by tenant_id — RLS
+    // alone lets superadmins see rows from *all* tenants merged together,
+    // which manifests as "duplicate columns" in a superadmin's own tenant view.
+    session?.tenantId
+      ? supabase
+          .from('leads')
+          .select('id,created_at,status,custom_data,assigned_to,follow_up_at')
+          .eq('tenant_id', session.tenantId)
+          .order('created_at', { ascending: false })
+      : Promise.resolve({ data: [] as unknown[] }),
+    session?.tenantId
+      ? supabase
+          .from('field_definitions')
+          .select('id,key,label,type,required,options')
+          .eq('tenant_id', session.tenantId)
+          .eq('active', true)
+          .order('sort_order')
+          .order('created_at')
+      : Promise.resolve({ data: [] as unknown[] }),
     session?.tenantId && session.user
       ? supabase
           .from('saved_views')
@@ -96,12 +94,19 @@ export default async function LeadsPage() {
   const activityEnabled = !!session?.isSuperadmin || features.activity
 
   const leads: Lead[] = (leadsRaw ?? []) as Lead[]
-  const fieldDefs: FieldDef[] = (fieldDefsRaw ?? []).map((f) => ({
-    key: f.key as string,
-    label: f.label as string,
-    type: f.type as string,
+  const fieldDefsRows = (fieldDefsRaw ?? []) as Array<{
+    key: string
+    label: string
+    type: string
+    required: boolean | null
+    options: string[] | null
+  }>
+  const fieldDefs: FieldDef[] = fieldDefsRows.map((f) => ({
+    key: f.key,
+    label: f.label,
+    type: f.type,
     required: !!f.required,
-    options: (f.options as string[] | null) ?? null,
+    options: f.options ?? null,
   }))
   const savedViews: SavedView[] = ((savedViewsRaw ?? []) as Array<{
     id: string
@@ -117,33 +122,55 @@ export default async function LeadsPage() {
   const members: Member[] = ((membersRaw ?? []) as Array<{ user_id: string; email: string | null }>)
     .map((m) => ({ user_id: m.user_id, email: m.email }))
 
+  // Passed to LeadsTable for "My leads" / "Unassigned" filters.
+  const currentUserId = session?.user.id ?? null
+
+  // KPIs — live on the Leads page (top strip).
   const total = leads.length
   const byStatus = (name: string) =>
     leads.filter((l) => (l.status ?? 'new').toLowerCase() === name).length
-
   const newCount  = byStatus('new')
   const wonCount  = byStatus('won')
   const lostCount = byStatus('lost')
-
-  const weekAgo  = getWeekAgoMs()
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
   const thisWeek = leads.filter((l) => new Date(l.created_at).getTime() >= weekAgo).length
 
   // Follow-up counts for the signed-in user
-  const currentUserId = session?.user.id ?? null
-  const today = startOfDayMs()
-  const tomorrow = today + 24 * 3600 * 1000
+  const startOfDay = (() => {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    return d.getTime()
+  })()
+  const tomorrow = startOfDay + 24 * 3600 * 1000
   const myFollowUps = currentUserId
     ? leads.filter((l) => l.assigned_to === currentUserId && l.follow_up_at)
     : []
   const dueToday = myFollowUps.filter((l) => {
     const t = new Date(l.follow_up_at!).getTime()
-    return t >= today && t < tomorrow
+    return t >= startOfDay && t < tomorrow
   }).length
-  const overdue = myFollowUps.filter((l) => new Date(l.follow_up_at!).getTime() < today).length
+  const overdue = myFollowUps.filter((l) => new Date(l.follow_up_at!).getTime() < startOfDay).length
 
-  const columns = fieldDefs.length > 0
-    ? fieldDefs.map((f) => f.key)
-    : Array.from(new Set(leads.flatMap((l) => Object.keys(l.custom_data ?? {}))))
+  // Dedupe columns by label — if two field_definitions share the same label
+  // (case-insensitive), keep only the first one in sort order. This prevents
+  // the leads table from rendering side-by-side "City" or "Name" columns when
+  // the tenant has stale/duplicate field definitions in the DB.
+  const columns = (() => {
+    if (fieldDefs.length === 0) {
+      return Array.from(new Set(leads.flatMap((l) => Object.keys(l.custom_data ?? {}))))
+    }
+    const seenLabels = new Set<string>()
+    const keys: string[] = []
+    for (const f of fieldDefs) {
+      const label = f.label.trim().toLowerCase()
+      if (seenLabels.has(label)) continue
+      seenLabels.add(label)
+      keys.push(f.key)
+    }
+    return keys
+  })()
+
+  const duplicateHiddenCount = fieldDefs.length - columns.length
 
   return (
     <div className="space-y-6">
@@ -174,12 +201,35 @@ export default async function LeadsPage() {
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <KpiCard label="Total"     value={total}     accent="gray"  />
-        <KpiCard label="This week" value={thisWeek}  accent="blue"  hint="Last 7 days" />
-        <KpiCard label="New"       value={newCount}  accent="blue"  />
+        <KpiCard label="Total"     value={total}     accent="gray" />
+        <KpiCard label="This week" value={thisWeek}  accent="blue" hint="Last 7 days" />
+        <KpiCard label="New"       value={newCount}  accent="blue" />
         <KpiCard label="Won"       value={wonCount}  accent="green" />
-        <KpiCard label="Lost"      value={lostCount} accent="red"   />
+        <KpiCard label="Lost"      value={lostCount} accent="red" />
       </div>
+
+      {duplicateHiddenCount > 0 && (
+        <div className="rounded-md border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200 flex items-center gap-2">
+          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>
+            <strong>{duplicateHiddenCount}</strong> duplicate field
+            {duplicateHiddenCount === 1 ? ' was' : 's were'} auto-hidden from this table.
+            {session?.isSuperadmin && session.tenantId && (
+              <>
+                {' '}
+                <a
+                  href={`/superadmin/tenants/${session.tenantId}`}
+                  className="underline font-medium hover:text-amber-900 dark:hover:text-amber-100"
+                >
+                  Manage fields →
+                </a>
+              </>
+            )}
+          </span>
+        </div>
+      )}
 
       <LeadsTable
         leads={leads}
@@ -195,6 +245,11 @@ export default async function LeadsPage() {
         currentUserId={currentUserId}
         initialVisibleColumns={
           (columnPrefRow as { visible_fields?: string[] } | null)?.visible_fields ?? null
+        }
+        manageFieldsHref={
+          session?.isSuperadmin && session.tenantId
+            ? `/superadmin/tenants/${session.tenantId}`
+            : undefined
         }
       />
     </div>

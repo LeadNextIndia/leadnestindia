@@ -105,8 +105,8 @@ export function GstConfigForm({ initial, onSaved }: Props) {
 
       {msg && (
         <p className={msg.kind === 'ok'
-          ? 'text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-3 py-2'
-          : 'text-sm text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2'}>
+          ? 'text-sm text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-md px-3 py-2'
+          : 'text-sm text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-md px-3 py-2'}>
           {msg.text}
         </p>
       )}

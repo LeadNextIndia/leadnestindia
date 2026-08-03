@@ -39,7 +39,7 @@ export default async function SettingsPage() {
       <div>
         <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Settings</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Company branding, support tickets, and more.
+          Company branding, field labels, support tickets, and more.
         </p>
       </div>
 

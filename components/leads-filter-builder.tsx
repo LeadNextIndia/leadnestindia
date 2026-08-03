@@ -38,9 +38,23 @@ let nextId = 0
 const genId = () => `c${++nextId}-${Date.now()}`
 
 export function LeadsFilterBuilder({ filter, onChange, fieldDefs }: Props) {
+  // Dedupe field defs by label (case-insensitive) to prevent duplicate options
+  // showing up when the tenant has stale/duplicate field_definitions.
+  const uniqueFieldDefs = useMemo<FieldDef[]>(() => {
+    const seen = new Set<string>()
+    const out: FieldDef[] = []
+    for (const f of fieldDefs) {
+      const k = f.label.trim().toLowerCase()
+      if (seen.has(k)) continue
+      seen.add(k)
+      out.push(f)
+    }
+    return out
+  }, [fieldDefs])
+
   const allFields = useMemo<FieldMeta[]>(
-    () => [...BUILT_IN_FIELDS, ...fieldDefs.map(toFieldMeta)],
-    [fieldDefs],
+    () => [...BUILT_IN_FIELDS, ...uniqueFieldDefs.map(toFieldMeta)],
+    [uniqueFieldDefs],
   )
   const fieldByKey = useMemo(
     () => Object.fromEntries(allFields.map((f) => [f.key, f])) as Record<string, FieldMeta>,
