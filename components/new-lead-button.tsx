@@ -4,8 +4,14 @@ import { useEffect, useState } from 'react'
 import { LeadForm } from '@/components/lead-form'
 import { PlusIcon } from '@/components/icons'
 
-export function NewLeadButton() {
+type Props = {
+  moduleSlug?: string
+  moduleSingular?: string
+}
+
+export function NewLeadButton({ moduleSlug, moduleSingular }: Props = {}) {
   const [open, setOpen] = useState(false)
+  const label = moduleSingular ?? 'Lead'
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -28,7 +34,7 @@ export function NewLeadButton() {
         onClick={() => setOpen(true)}
         className="inline-flex items-center gap-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md px-3 py-1.5 transition"
       >
-        <PlusIcon className="w-4 h-4" /> New Lead
+        <PlusIcon className="w-4 h-4" /> New {label}
       </button>
 
       {open && (
@@ -45,7 +51,7 @@ export function NewLeadButton() {
             <div className="flex items-start justify-between p-5 border-b border-gray-200 dark:border-[var(--border)]">
               <div>
                 <h2 id="new-lead-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  New Lead
+                  New {label}
                 </h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                   The fields below are configured for your store.
@@ -65,8 +71,10 @@ export function NewLeadButton() {
 
             <div className="p-5 overflow-y-auto">
               <LeadForm
+                moduleSlug={moduleSlug}
                 onSuccess={() => setOpen(false)}
                 onCancel={() => setOpen(false)}
+                submitLabel={`Save ${label}`}
               />
             </div>
           </div>

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { requireSuperadmin } from '@/lib/authz'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { TenantConfigClient } from '@/components/tenant-config-client'
+import { ModulesAdminClient } from '@/components/modules-admin-client'
 import { type Features, withDefaults } from '@/lib/features'
 
 export const dynamic = 'force-dynamic'
@@ -38,7 +39,7 @@ export default async function TenantConfigPage({ params }: Props) {
   if (!tenantBase) notFound()
 
   // 2. Fetch schema-dependent bits separately so we can degrade gracefully.
-  const [featuresRes, fieldsRes, usersRes, leadCountRes] = await Promise.all([
+  const [featuresRes, fieldsRes, usersRes, leadCountRes, modules] = await Promise.all([
     admin.from('tenants').select('features').eq('id', tenantId).maybeSingle(),
     admin
       .from('field_definitions')
@@ -55,6 +56,34 @@ export default async function TenantConfigPage({ params }: Props) {
       .from('leads')
       .select('id', { count: 'exact', head: true })
       .eq('tenant_id', tenantId),
+    // include inactive modules too — superadmin needs to see them to toggle back on
+    admin
+      .from('lead_modules')
+      .select('id,slug,singular,plural,icon,sort_order,is_default,active')
+      .eq('tenant_id', tenantId)
+      .order('sort_order')
+      .order('created_at')
+      .then((r) =>
+        ((r.data ?? []) as Array<{
+          id: string
+          slug: string
+          singular: string
+          plural: string
+          icon: string | null
+          sort_order: number | null
+          is_default: boolean | null
+          active: boolean | null
+        }>).map((row) => ({
+          id: row.id,
+          slug: row.slug,
+          singular: row.singular,
+          plural: row.plural,
+          icon: row.icon ?? null,
+          sortOrder: row.sort_order ?? 0,
+          isDefault: !!row.is_default,
+          active: row.active !== false,
+        })),
+      ),
   ])
 
   const schemaIssues: string[] = []
@@ -118,6 +147,17 @@ export default async function TenantConfigPage({ params }: Props) {
         initialFeatures={features}
         initialUsers={users}
       />
+
+      <div className="rounded-lg border border-gray-200 dark:border-[var(--border)] bg-white dark:bg-[var(--surface)] p-5 space-y-4">
+        <div>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Lead Modules</h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            Configure this company&apos;s Lead-like modules (Walk-in, Online Inquiry, etc.).
+            The checkbox on each row toggles sidebar visibility for the tenant.
+          </p>
+        </div>
+        <ModulesAdminClient tenantId={tenantId} initialModules={modules} />
+      </div>
     </div>
   )
 }

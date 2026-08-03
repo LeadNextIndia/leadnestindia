@@ -27,6 +27,10 @@ type Props = {
   currentUserId: string | null
   initialVisibleColumns?: string[] | null
   manageFieldsHref?: string
+  /** view_key for column preference persistence (per module). Default: 'leads'. */
+  columnViewKey?: string
+  /** Base URL for CSV export (module-scoped). Default: '/api/export'. */
+  exportHrefBase?: string
 }
 
 const statusStyles: Record<string, string> = {
@@ -88,6 +92,8 @@ export function LeadsTable({
   currentUserId,
   initialVisibleColumns,
   manageFieldsHref,
+  columnViewKey = 'leads',
+  exportHrefBase = '/api/export',
 }: Props) {
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -137,9 +143,11 @@ export function LeadsTable({
     })
   }, [leads, query, statusFilter, assigneeFilter, advancedFilter, currentUserId])
 
-  const exportHref = isEmptyFilter(advancedFilter)
-    ? '/api/export'
-    : `/api/export?filter=${serializeFilter(advancedFilter)}`
+  const exportHref = (() => {
+    if (isEmptyFilter(advancedFilter)) return exportHrefBase
+    const sep = exportHrefBase.includes('?') ? '&' : '?'
+    return `${exportHrefBase}${sep}filter=${serializeFilter(advancedFilter)}`
+  })()
 
   return (
     <>
@@ -239,7 +247,7 @@ export function LeadsTable({
           <div className="ml-auto flex items-center gap-3">
             <span className="text-xs text-gray-500 dark:text-gray-400">{filtered.length} of {leads.length}</span>
             <ColumnPicker
-              viewKey="leads"
+              viewKey={columnViewKey}
               options={columnPickerOptions}
               value={visibleColumnPref}
               onChange={setVisibleColumnPref}

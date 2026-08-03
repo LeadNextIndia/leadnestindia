@@ -6,6 +6,7 @@ import { LogoutButton } from '@/components/logout-button'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { type Features, withDefaults } from '@/lib/features'
 import { getTenantBranding } from '@/lib/branding'
+import { listModulesForTenant, type ModuleSummary } from '@/lib/lead-modules'
 
 export default async function DashboardLayout({
   children,
@@ -35,10 +36,11 @@ export default async function DashboardLayout({
     )
   }
 
-  // Fetch tenant features + branding (null for superadmins without a tenant)
+  // Fetch tenant features + branding + modules (null for superadmins without a tenant)
   let features: Features | null = null
   let tenantName: string | null = null
   let backgroundUrl: string | null = null
+  let modules: ModuleSummary[] = []
   if (session.tenantId) {
     const supabase = await createClient()
     const { data } = await supabase
@@ -51,6 +53,8 @@ export default async function DashboardLayout({
     const branding = await getTenantBranding(session.tenantId)
     tenantName = branding.displayName
     backgroundUrl = branding.backgroundUrl
+
+    modules = await listModulesForTenant(supabase, session.tenantId)
   }
 
   const initial = (session.user.email ?? '?').charAt(0).toUpperCase()
@@ -62,6 +66,7 @@ export default async function DashboardLayout({
         isSuperadmin={session.isSuperadmin}
         features={features}
         tenantName={tenantName}
+        modules={modules}
       />
 
       <div className="flex-1 flex flex-col min-w-0">

@@ -10,6 +10,7 @@ export type Features = {
   activity: boolean      // Notes + activity timeline on each lead
   dashboard: boolean     // Standalone Dashboard view (KPIs + follow-ups)
   field_labels: boolean  // Admin can rename field labels in Settings
+  multi_modules: boolean // Paid — create additional lead-like modules (Walk-in, Online Inquiry, etc.)
 }
 
 export const DEFAULT_FEATURES: Features = {
@@ -21,6 +22,7 @@ export const DEFAULT_FEATURES: Features = {
   activity: false,    // paid — off by default
   dashboard: true,    // on by default — KPI overview
   field_labels: false, // opt-in — off by default
+  multi_modules: false, // paid — off by default
 }
 
 // Legacy tenant rows may not have every key. Merge with defaults.

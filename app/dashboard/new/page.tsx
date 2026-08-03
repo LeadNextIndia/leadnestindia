@@ -1,28 +1,16 @@
-import Link from 'next/link'
-import { ArrowLeftIcon } from '@/components/icons'
-import { LeadForm } from '@/components/lead-form'
+import { redirect } from 'next/navigation'
+import { getSession } from '@/lib/authz'
+import { createClient } from '@/lib/supabase/server'
+import { getDefaultModule } from '@/lib/lead-modules'
 
-export default function NewLeadPage() {
-  return (
-    <div className="max-w-xl">
-      <Link
-        href="/dashboard"
-        className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-      >
-        <ArrowLeftIcon className="w-3.5 h-3.5" />
-        Back to leads
-      </Link>
+// Legacy /dashboard/new → redirect to the default module's new-lead page.
+export default async function LegacyNewLeadPage() {
+  const session = await getSession()
+  if (!session) redirect('/login')
+  if (!session.tenantId) redirect('/dashboard')
 
-      <div className="mt-3">
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">New Lead</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Fill in the details. The fields below are configured for your store.
-        </p>
-      </div>
-
-      <div className="mt-5 rounded-lg border border-gray-200 dark:border-[var(--border)] bg-white dark:bg-[var(--surface)] p-5">
-        <LeadForm />
-      </div>
-    </div>
-  )
+  const supabase = await createClient()
+  const def = await getDefaultModule(supabase, session.tenantId)
+  if (!def) redirect('/dashboard/settings/modules')
+  redirect(`/dashboard/m/${def.slug}/new`)
 }

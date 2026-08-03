@@ -17,11 +17,14 @@ export function LeadForm({
   onSuccess,
   onCancel,
   submitLabel = 'Save Lead',
+  moduleSlug,
 }: {
   initialFields?: LeadFormField[]
   onSuccess?: () => void
   onCancel?: () => void
   submitLabel?: string
+  /** If provided, the lead is filed under this module and fields load from the module config. */
+  moduleSlug?: string
 }) {
   const supabase = createClient()
   const router = useRouter()
@@ -62,14 +65,68 @@ export function LeadForm({
       setTenantId(tu.tenant_id)
 
       if (initialFields === undefined) {
-        const { data: defs } = await supabase
-          .from('field_definitions')
-          .select('key,label,type,required,options')
-          .eq('tenant_id', tu.tenant_id)
-          .eq('active', true)
-          .order('sort_order')
+        // If a module slug is provided, pull the module's resolved field set
+        // (label overrides + visibility + order). Otherwise fall back to the
+        // full tenant catalog.
+        if (moduleSlug) {
+          const { data: moduleRow } = await supabase
+            .from('lead_modules')
+            .select('id')
+            .eq('tenant_id', tu.tenant_id)
+            .eq('slug', moduleSlug)
+            .maybeSingle()
 
-        setFields(defs ?? [])
+          if (moduleRow?.id) {
+            const { data: mfRows } = await supabase
+              .from('module_fields')
+              .select(
+                'label_override,required_override,sort_order,visible,' +
+                  'field_definitions!inner(key,label,type,required,options,active)',
+              )
+              .eq('module_id', moduleRow.id)
+              .eq('visible', true)
+              .order('sort_order')
+
+            type Row = {
+              label_override: string | null
+              required_override: boolean | null
+              sort_order: number | null
+              visible: boolean | null
+              field_definitions: {
+                key: string
+                label: string
+                type: string
+                required: boolean | null
+                options: string[] | null
+                active: boolean | null
+              } | null
+            }
+            const resolved: LeadFormField[] = ((mfRows ?? []) as unknown as Row[])
+              .filter((r) => r.field_definitions && r.field_definitions.active !== false)
+              .map((r) => {
+                const d = r.field_definitions!
+                return {
+                  key: d.key,
+                  label: r.label_override ?? d.label,
+                  type: d.type,
+                  required: r.required_override ?? !!d.required,
+                  options: d.options ?? null,
+                }
+              })
+            setFields(resolved)
+          } else {
+            setFields([])
+          }
+        } else {
+          const { data: defs } = await supabase
+            .from('field_definitions')
+            .select('key,label,type,required,options')
+            .eq('tenant_id', tu.tenant_id)
+            .eq('active', true)
+            .order('sort_order')
+
+          setFields((defs ?? []) as LeadFormField[])
+        }
       }
       setLoading(false)
     })()
@@ -93,6 +150,7 @@ export function LeadForm({
       tenant_id: tenantId,
       custom_data: values,
       source: 'web',
+      module_key: moduleSlug ?? 'lead',
     })
 
     if (insertError) {
@@ -104,6 +162,8 @@ export function LeadForm({
     setValues({})
     if (onSuccess) {
       onSuccess()
+    } else if (moduleSlug) {
+      router.push(`/dashboard/m/${moduleSlug}`)
     } else {
       router.push('/dashboard')
     }

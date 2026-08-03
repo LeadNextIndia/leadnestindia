@@ -3,6 +3,7 @@ import { requireSession } from '@/lib/authz'
 import { createClient } from '@/lib/supabase/server'
 import { applyFilter, parseFilter, type EvalRow } from '@/lib/filters'
 import { withDefaults, type Features } from '@/lib/features'
+import { getModuleConfig, getDefaultModule } from '@/lib/lead-modules'
 
 type LeadRow = EvalRow & { id: string }
 
@@ -27,31 +28,48 @@ export async function GET(req: NextRequest) {
     return Response.json({ error: 'Export not enabled' }, { status: 403 })
   }
 
+  // Optional ?module=<slug> — scope export to a single module and resolve
+  // column headers via the module's field config. Absent = default module.
+  const url = new URL(req.url)
+  const moduleSlug = url.searchParams.get('module')
+  const config = moduleSlug
+    ? await getModuleConfig(supabase, session.tenantId, moduleSlug)
+    : await (async () => {
+        const def = await getDefaultModule(supabase, session.tenantId!)
+        return def ? await getModuleConfig(supabase, session.tenantId!, def.slug) : null
+      })()
+
+  if (!config) {
+    return Response.json({ error: 'Module not found' }, { status: 404 })
+  }
+
   const { data: leads } = await supabase
     .from('leads')
     .select('id,created_at,status,custom_data')
     .eq('tenant_id', session.tenantId)
+    .eq('module_key', config.slug)
     .order('created_at', { ascending: false })
 
-  const filter = parseFilter(new URL(req.url).searchParams.get('filter'))
+  const filter = parseFilter(url.searchParams.get('filter'))
   const rows: LeadRow[] = applyFilter((leads ?? []) as LeadRow[], filter)
 
-  const keys = new Set<string>()
-  rows.forEach((r) => Object.keys(r.custom_data ?? {}).forEach((k) => keys.add(k)))
-  const cols = [...keys]
+  // Column order + labels come from the module config so the CSV matches
+  // what the user sees on-screen (same principle as the filter evaluator).
+  const cols = config.fields.map((f) => f.key)
+  const headers = ['Created', 'Status', ...config.fields.map((f) => f.label)]
 
   const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`
   const csv = [
-    ['created_at', 'status', ...cols].map(esc).join(','),
+    headers.map(esc).join(','),
     ...rows.map((r) =>
       [r.created_at, r.status, ...cols.map((c) => r.custom_data?.[c])].map(esc).join(',')),
   ].join('\n')
 
+  const filename = `${config.slug}.csv`
   return new Response(csv, {
     headers: {
       'Content-Type': 'text/csv',
-      'Content-Disposition': 'attachment; filename="leads.csv"',
-      // Prevent the browser from caching CSV that contains user data
+      'Content-Disposition': `attachment; filename="${filename}"`,
       'Cache-Control': 'private, no-store',
     },
   })

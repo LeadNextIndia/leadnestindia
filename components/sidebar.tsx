@@ -15,6 +15,7 @@ import {
 import { cn } from '@/lib/utils'
 
 import type { Features } from '@/lib/features'
+import type { ModuleSummary } from '@/lib/lead-modules'
 
 type NavItem = {
   label: string
@@ -30,21 +31,33 @@ type Props = {
   isSuperadmin: boolean
   features: Features | null
   tenantName: string | null
+  modules: ModuleSummary[]
 }
 
-export function Sidebar({ role, isSuperadmin, features, tenantName }: Props) {
+export function Sidebar({ role, isSuperadmin, features, tenantName, modules }: Props) {
   const pathname = usePathname()
 
   const isAdmin = role === 'admin' || isSuperadmin
   const feat = features ?? {
     team: true, export: true, settings: false,
     analytics: false, invoicing: false, activity: false,
-    dashboard: true, field_labels: false,
+    dashboard: true, field_labels: false, multi_modules: false,
   }
 
-  // Order: Leads → Dashboard → Field labels → Invoices → Team → Export → Settings → Superadmin
+  // Order: [module list] → Dashboard → Field labels → Invoices → Team → Export → Settings → Superadmin
   const items: NavItem[] = []
-  items.push({ label: 'Leads', href: '/dashboard', icon: LayoutIcon, matchExact: true })
+  if (modules.length > 0) {
+    for (const m of modules) {
+      items.push({
+        label: m.plural,
+        href: `/dashboard/m/${m.slug}`,
+        icon: LayoutIcon,
+      })
+    }
+  } else {
+    // Fallback for tenants whose migration hasn't run yet — link to legacy /dashboard.
+    items.push({ label: 'Leads', href: '/dashboard', icon: LayoutIcon, matchExact: true })
+  }
 
   if (feat.dashboard || isSuperadmin) {
     items.push({ label: 'Dashboard', href: '/dashboard/overview', icon: LayoutIcon })
@@ -59,7 +72,16 @@ export function Sidebar({ role, isSuperadmin, features, tenantName }: Props) {
     items.push({ label: 'Team', href: '/dashboard/team', icon: UsersIcon })
   }
   if (isAdmin && feat.export) {
-    items.push({ label: 'Export', href: '/api/export', icon: DownloadIcon, external: true })
+    // Export goes through the current module's page — this is a shortcut to the default module's export.
+    const defaultSlug = modules.find((m) => m.isDefault)?.slug ?? modules[0]?.slug
+    if (defaultSlug) {
+      items.push({
+        label: 'Export',
+        href: `/api/export?module=${encodeURIComponent(defaultSlug)}`,
+        icon: DownloadIcon,
+        external: true,
+      })
+    }
   }
   if (isAdmin) {
     items.push({ label: 'Settings', href: '/dashboard/settings', icon: SettingsIcon })
