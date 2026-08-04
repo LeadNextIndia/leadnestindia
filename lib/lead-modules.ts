@@ -40,8 +40,30 @@ export type ResolvedField = {
   sortOrder: number
 }
 
+export type StatusColor =
+  | 'gray'
+  | 'blue'
+  | 'indigo'
+  | 'amber'
+  | 'green'
+  | 'red'
+  | 'purple'
+  | 'pink'
+  | 'teal'
+
+export type ModuleStatus = {
+  id: string
+  key: string
+  label: string
+  color: StatusColor
+  sortOrder: number
+  isDefault: boolean
+  isTerminal: boolean
+}
+
 export type ModuleConfig = ModuleSummary & {
   fields: ResolvedField[]
+  statuses: ModuleStatus[]
 }
 
 // Untyped Supabase client to sidestep generated-schema generics; every helper
@@ -149,7 +171,40 @@ export async function getModuleConfig(
       }
     })
 
-  return { ...summary, fields }
+  const statuses = await listModuleStatuses(supabase, summary.id)
+  return { ...summary, fields, statuses }
+}
+
+/** Statuses for a given module id (ordered by sort_order). */
+export async function listModuleStatuses(
+  supabase: SupabaseAny,
+  moduleId: string,
+): Promise<ModuleStatus[]> {
+  const { data } = await supabase
+    .from('module_statuses')
+    .select('id,key,label,color,sort_order,is_default,is_terminal')
+    .eq('module_id', moduleId)
+    .order('sort_order')
+    .order('created_at')
+
+  type Row = {
+    id: string
+    key: string
+    label: string
+    color: string
+    sort_order: number | null
+    is_default: boolean | null
+    is_terminal: boolean | null
+  }
+  return ((data ?? []) as Row[]).map((r) => ({
+    id: r.id,
+    key: r.key,
+    label: r.label,
+    color: (r.color as StatusColor) ?? 'gray',
+    sortOrder: r.sort_order ?? 0,
+    isDefault: !!r.is_default,
+    isTerminal: !!r.is_terminal,
+  }))
 }
 
 /** The tenant's default module (backfilled on migration; always exists). */

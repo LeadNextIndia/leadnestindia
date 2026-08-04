@@ -40,6 +40,7 @@ const FEATURE_LIST: { key: keyof Features; label: string; desc: string; paid?: b
   { key: 'analytics',    label: 'Analytics',       desc: 'Charts, advanced filter builder, and saved views on the Leads page.', paid: true },
   { key: 'invoicing',    label: 'Invoicing',       desc: 'GST-compliant invoice generation from leads, with print / download PDF.', paid: true },
   { key: 'activity',     label: 'Notes & activity timeline', desc: 'Team notes on each lead plus an auto-logged history of status/assignee/edits.', paid: true },
+  { key: 'kanban',       label: 'Kanban board view', desc: 'Second view for each module — records shown as cards in status columns. Drag to change status.', paid: true },
   { key: 'field_labels', label: 'Rename field labels', desc: 'Company admins can rename the display labels of custom fields from Settings (the underlying field keys stay superadmin-controlled).' },
   { key: 'settings',     label: 'Settings',        desc: 'Legacy Settings-page toggle (unused — Settings is now always on for admins).' },
 ]

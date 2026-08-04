@@ -3,22 +3,36 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f9fafb;
-  --foreground: #111827;
+  --background: #f7f7fb;
+  --foreground: #0f172a;
   --surface: #ffffff;
-  --surface-muted: #f3f4f6;
-  --border: #e5e7eb;
-  --text-muted: #6b7280;
+  --surface-muted: #f2f2f8;
+  --border: #e6e6ee;
+  --text-muted: #64748b;
+
+  /* Brand gradient — used on primary buttons, logo tiles, active nav, etc. */
+  --brand-from: #6366f1;   /* indigo-500 */
+  --brand-via:  #8b5cf6;   /* violet-500 */
+  --brand-to:   #ec4899;   /* pink-500 */
+
+  /* Soft ambient background wash — a hint of colour for the app shell. */
+  --app-wash:
+    radial-gradient(1200px 600px at -10% -20%, rgba(99,102,241,0.08), transparent 60%),
+    radial-gradient(1000px 500px at 110% 10%, rgba(236,72,153,0.06), transparent 60%);
 }
 
 .dark {
-  --background: #0b0f17;
+  --background: #0a0d16;
   --foreground: #e5e7eb;
   --surface: #131a24;
   --surface-muted: #1a2230;
   --border: #263041;
   --text-muted: #94a3b8;
   color-scheme: dark;
+
+  --app-wash:
+    radial-gradient(1200px 600px at -10% -20%, rgba(99,102,241,0.12), transparent 60%),
+    radial-gradient(1000px 500px at 110% 10%, rgba(236,72,153,0.10), transparent 60%);
 }
 
 @theme inline {
@@ -34,9 +48,55 @@
 
 html, body {
   background: var(--background);
+  background-image: var(--app-wash);
+  background-attachment: fixed;
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Reusable brand utilities */
+.brand-gradient {
+  background-image: linear-gradient(135deg, var(--brand-from), var(--brand-via), var(--brand-to));
+}
+.brand-text {
+  background-image: linear-gradient(135deg, var(--brand-from), var(--brand-via), var(--brand-to));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.brand-ring {
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.18);
+}
+
+/* Slightly softer default focus ring across the app. */
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.28);
+  border-radius: 8px;
+}
+
+/* Cleaner scrollbars (webkit only — Firefox uses its own thin default). */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb {
+  background: rgba(100,116,139,0.28);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100,116,139,0.44);
+  background-clip: content-box;
+}
+::-webkit-scrollbar-track { background: transparent; }
+
+/* Subtle pop for anything with data-pop on hover — used sparingly. */
+[data-pop] {
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+[data-pop]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px -12px rgba(99,102,241,0.35);
 }
 
 /* Print: show only the invoice, on white, with tight margins.

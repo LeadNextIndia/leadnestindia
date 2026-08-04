@@ -98,7 +98,7 @@ export default async function SuperadminModuleFieldsPage({ params }: Props) {
         </p>
       </div>
 
-      <ModuleFieldsEditor moduleId={moduleRow.id} initialFields={fields} />
+      <ModuleFieldsEditor tenantId={tenantId} moduleId={moduleRow.id} initialFields={fields} />
     </div>
   )
 }
