@@ -2,8 +2,15 @@
 
 import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import type { ModuleStatus } from '@/lib/lead-modules'
 
-const STATUSES = ['new', 'contacted', 'qualified', 'won', 'lost']
+const FALLBACK_STATUSES: ModuleStatus[] = [
+  { id: 'f-new',       key: 'new',       label: 'New',       color: 'blue',   sortOrder: 0, isDefault: true,  isTerminal: false },
+  { id: 'f-contacted', key: 'contacted', label: 'Contacted', color: 'amber',  sortOrder: 1, isDefault: false, isTerminal: false },
+  { id: 'f-qualified', key: 'qualified', label: 'Qualified', color: 'indigo', sortOrder: 2, isDefault: false, isTerminal: false },
+  { id: 'f-won',       key: 'won',       label: 'Won',       color: 'green',  sortOrder: 3, isDefault: false, isTerminal: true  },
+  { id: 'f-lost',      key: 'lost',      label: 'Lost',      color: 'red',    sortOrder: 4, isDefault: false, isTerminal: true  },
+]
 
 export type EditableLead = {
   id: string
@@ -40,6 +47,7 @@ type Props = {
   lead: EditableLead
   fieldDefs: FieldDef[]
   members: Member[]
+  statuses?: ModuleStatus[]
   onClose: () => void
   invoicingEnabled?: boolean
   activityEnabled?: boolean
@@ -58,9 +66,10 @@ function fromDateInputValue(s: string): string | null {
   return s ? new Date(s + 'T09:00:00').toISOString() : null
 }
 
-export function LeadEditModal({ lead, fieldDefs, members, onClose, invoicingEnabled, activityEnabled }: Props) {
+export function LeadEditModal({ lead, fieldDefs, members, statuses, onClose, invoicingEnabled, activityEnabled }: Props) {
   const router = useRouter()
   const [tab, setTab] = useState<'details' | 'activity'>('details')
+  const availableStatuses = statuses && statuses.length > 0 ? statuses : FALLBACK_STATUSES
 
   // If activity is disabled and somehow the tab got set to 'activity', pull it back.
   const currentTab: 'details' | 'activity' = activityEnabled ? tab : 'details'
@@ -161,7 +170,7 @@ export function LeadEditModal({ lead, fieldDefs, members, onClose, invoicingEnab
                     onChange={(e) => setStatus(e.target.value)}
                     className="w-full border border-gray-200 dark:border-[var(--border)] bg-white dark:bg-[var(--surface)] rounded-md px-3 py-2 text-sm"
                   >
-                    {STATUSES.map((s) => <option key={s} value={s} className="capitalize">{s}</option>)}
+                    {availableStatuses.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
                   </select>
                 </Field>
 

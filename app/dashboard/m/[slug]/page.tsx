@@ -7,8 +7,10 @@ import type { SavedView } from '@/components/saved-views-menu'
 import type { Member } from '@/components/lead-edit-modal'
 import type { LeadFilter } from '@/lib/filters'
 import { type Features, withDefaults } from '@/lib/features'
+import Link from 'next/link'
 import { NewLeadButton } from '@/components/new-lead-button'
 import { getModuleConfig } from '@/lib/lead-modules'
+import { withLayoutDefaults, type LeadsPageSectionType } from '@/lib/layout-config'
 
 type Lead = {
   id: string
@@ -51,6 +53,7 @@ export default async function ModuleLeadsPage({ params }: Props) {
     { data: tenantRow },
     { data: membersRaw },
     { data: columnPrefRow },
+    { data: layoutRow },
   ] = await Promise.all([
     supabase
       .from('leads')
@@ -77,7 +80,15 @@ export default async function ModuleLeadsPage({ params }: Props) {
           .eq('view_key', `module:${config.slug}`)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    supabase.from('tenants').select('layout_config').eq('id', session.tenantId).maybeSingle(),
   ])
+
+  const layoutConfig = withLayoutDefaults(
+    (layoutRow as { layout_config?: unknown } | null)?.layout_config,
+  )
+  const sectionOrder: LeadsPageSectionType[] = layoutConfig.leadsPage.sections
+    .filter((s) => s.visible)
+    .map((s) => s.type)
 
   const features: Features = withDefaults(
     (tenantRow as { features?: Partial<Features> } | null)?.features,
@@ -86,6 +97,7 @@ export default async function ModuleLeadsPage({ params }: Props) {
   const exportEnabled = !!session.isSuperadmin || features.export
   const invoicingEnabled = !!session.isSuperadmin || features.invoicing
   const activityEnabled = !!session.isSuperadmin || features.activity
+  const kanbanEnabled = !!session.isSuperadmin || features.kanban
 
   const leads: Lead[] = (leadsRaw ?? []) as Lead[]
 
@@ -150,8 +162,10 @@ export default async function ModuleLeadsPage({ params }: Props) {
 
   const duplicateHiddenCount = fieldDefs.length - columns.length
 
-  return (
-    <div className="space-y-6">
+  // Build each section's JSX once, then render them in the order the superadmin
+  // configured for this tenant (`tenants.layout_config.leadsPage.sections`).
+  const sectionElements: Record<LeadsPageSectionType, React.ReactNode> = {
+    header: (
       <div className="flex flex-wrap gap-3 items-start justify-between">
         <div>
           <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{config.plural}</h1>
@@ -160,11 +174,25 @@ export default async function ModuleLeadsPage({ params }: Props) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {kanbanEnabled && (
+            <div className="inline-flex items-center gap-1 rounded-full border border-gray-200/70 dark:border-[var(--border)] bg-white/60 dark:bg-[var(--surface)]/70 backdrop-blur-sm p-1">
+              <span className="px-3 py-1 text-xs font-medium brand-gradient text-white rounded-full shadow-sm shadow-indigo-500/30">
+                Table
+              </span>
+              <Link
+                href={`/dashboard/m/${config.slug}/board`}
+                className="px-3 py-1 text-xs text-gray-600 dark:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-[var(--surface-muted)] transition-colors"
+              >
+                Board
+              </Link>
+            </div>
+          )}
           <NewLeadButton moduleSlug={config.slug} moduleSingular={config.singular} />
         </div>
       </div>
-
-      {(overdue > 0 || dueToday > 0) && (
+    ),
+    follow_up_banner:
+      overdue > 0 || dueToday > 0 ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-500/10 dark:border-amber-500/30 px-4 py-2.5 flex items-center gap-4 text-sm">
           <span className="font-medium text-amber-800 dark:text-amber-300">Your follow-ups:</span>
           {overdue > 0 && (
@@ -178,8 +206,8 @@ export default async function ModuleLeadsPage({ params }: Props) {
             </span>
           )}
         </div>
-      )}
-
+      ) : null,
+    kpi_strip: (
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <KpiCard label="Total" value={total} accent="gray" />
         <KpiCard label="This week" value={thisWeek} accent="blue" hint="Last 7 days" />
@@ -187,8 +215,9 @@ export default async function ModuleLeadsPage({ params }: Props) {
         <KpiCard label="Won" value={wonCount} accent="green" />
         <KpiCard label="Lost" value={lostCount} accent="red" />
       </div>
-
-      {duplicateHiddenCount > 0 && (
+    ),
+    duplicate_hint:
+      duplicateHiddenCount > 0 ? (
         <div className="rounded-md border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200 flex items-center gap-2">
           <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -198,8 +227,8 @@ export default async function ModuleLeadsPage({ params }: Props) {
             {duplicateHiddenCount === 1 ? ' was' : 's were'} auto-hidden from this table.
           </span>
         </div>
-      )}
-
+      ) : null,
+    leads_table: (
       <LeadsTable
         leads={leads}
         columns={columns}
@@ -212,6 +241,7 @@ export default async function ModuleLeadsPage({ params }: Props) {
         showActivity={activityEnabled}
         members={members}
         currentUserId={currentUserId}
+        statuses={config.statuses}
         initialVisibleColumns={
           (columnPrefRow as { visible_fields?: string[] } | null)?.visible_fields ?? null
         }
@@ -223,6 +253,16 @@ export default async function ModuleLeadsPage({ params }: Props) {
             : undefined
         }
       />
+    ),
+  }
+
+  return (
+    <div className="space-y-6">
+      {sectionOrder.map((type) => {
+        const el = sectionElements[type]
+        if (!el) return null
+        return <div key={type}>{el}</div>
+      })}
     </div>
   )
 }

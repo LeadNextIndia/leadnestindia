@@ -11,6 +11,7 @@ export type Features = {
   dashboard: boolean     // Standalone Dashboard view (KPIs + follow-ups)
   field_labels: boolean  // Admin can rename field labels in Settings
   multi_modules: boolean // Paid — create additional lead-like modules (Walk-in, Online Inquiry, etc.)
+  kanban: boolean        // Paid — board view grouped by module status, drag cards between columns
 }
 
 export const DEFAULT_FEATURES: Features = {
@@ -23,6 +24,7 @@ export const DEFAULT_FEATURES: Features = {
   dashboard: true,    // on by default — KPI overview
   field_labels: false, // opt-in — off by default
   multi_modules: false, // paid — off by default
+  kanban: false,      // paid — off by default
 }
 
 // Legacy tenant rows may not have every key. Merge with defaults.

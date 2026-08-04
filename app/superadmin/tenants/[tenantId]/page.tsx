@@ -4,7 +4,9 @@ import { requireSuperadmin } from '@/lib/authz'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { TenantConfigClient } from '@/components/tenant-config-client'
 import { ModulesAdminClient } from '@/components/modules-admin-client'
+import { LeadsPageSectionsEditor } from '@/components/leads-page-sections-editor'
 import { type Features, withDefaults } from '@/lib/features'
+import { withLayoutDefaults } from '@/lib/layout-config'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,7 +41,7 @@ export default async function TenantConfigPage({ params }: Props) {
   if (!tenantBase) notFound()
 
   // 2. Fetch schema-dependent bits separately so we can degrade gracefully.
-  const [featuresRes, fieldsRes, usersRes, leadCountRes, modules] = await Promise.all([
+  const [featuresRes, fieldsRes, usersRes, leadCountRes, modules, layoutRes] = await Promise.all([
     admin.from('tenants').select('features').eq('id', tenantId).maybeSingle(),
     admin
       .from('field_definitions')
@@ -84,7 +86,11 @@ export default async function TenantConfigPage({ params }: Props) {
           active: row.active !== false,
         })),
       ),
+    admin.from('tenants').select('layout_config').eq('id', tenantId).maybeSingle(),
   ])
+  const layoutConfig = withLayoutDefaults(
+    (layoutRes.data as { layout_config?: unknown } | null)?.layout_config,
+  )
 
   const schemaIssues: string[] = []
   if (featuresRes.error) {
@@ -153,10 +159,24 @@ export default async function TenantConfigPage({ params }: Props) {
           <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Lead Modules</h2>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             Configure this company&apos;s Lead-like modules (Walk-in, Online Inquiry, etc.).
-            The checkbox on each row toggles sidebar visibility for the tenant.
+            Drag rows to reorder the sidebar; the checkbox toggles visibility.
           </p>
         </div>
         <ModulesAdminClient tenantId={tenantId} initialModules={modules} />
+      </div>
+
+      <div className="rounded-lg border border-gray-200 dark:border-[var(--border)] bg-white dark:bg-[var(--surface)] p-5 space-y-4">
+        <div>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Records Page Layout</h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            Design what appears on this tenant&apos;s records page. Drag to reorder,
+            untick to hide.
+          </p>
+        </div>
+        <LeadsPageSectionsEditor
+          tenantId={tenantId}
+          initialSections={layoutConfig.leadsPage.sections}
+        />
       </div>
     </div>
   )

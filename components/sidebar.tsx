@@ -91,9 +91,9 @@ export function Sidebar({ role, isSuperadmin, features, tenantName, modules }: P
   }
 
   return (
-    <aside className="w-56 border-r border-gray-200 dark:border-[var(--border)] bg-white dark:bg-[var(--surface)] flex flex-col">
-      <div className="h-14 flex items-center gap-2 px-4 border-b border-gray-200 dark:border-[var(--border)]">
-        <div className="w-7 h-7 rounded-md bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white flex-shrink-0">
+    <aside className="w-56 border-r border-gray-200/70 dark:border-[var(--border)] bg-white/70 dark:bg-[var(--surface)]/80 backdrop-blur-md flex flex-col">
+      <div className="h-14 flex items-center gap-2.5 px-4 border-b border-gray-200/70 dark:border-[var(--border)]">
+        <div className="w-8 h-8 rounded-xl brand-gradient flex items-center justify-center text-white flex-shrink-0 shadow-md shadow-indigo-500/20">
           <SparkleIcon className="w-4 h-4" />
         </div>
         <div className="leading-tight min-w-0">
@@ -118,7 +118,7 @@ export function Sidebar({ role, isSuperadmin, features, tenantName, modules }: P
         </div>
       </div>
 
-      <nav className="flex-1 px-2 py-3 space-y-0.5">
+      <nav className="flex-1 px-2 py-3 space-y-1">
         {items.map((item) => {
           const active = item.matchExact
             ? pathname === item.href
@@ -126,7 +126,15 @@ export function Sidebar({ role, isSuperadmin, features, tenantName, modules }: P
           const Icon = item.icon
           const content = (
             <>
-              <Icon className={cn('w-4 h-4', active ? 'text-blue-600' : 'text-gray-500 group-hover:text-gray-700')} />
+              {active && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full brand-gradient" aria-hidden />
+              )}
+              <Icon
+                className={cn(
+                  'w-4 h-4 transition-transform duration-150 group-hover:scale-110',
+                  active ? 'text-indigo-600 dark:text-indigo-300' : 'text-gray-500 group-hover:text-gray-800 dark:group-hover:text-gray-100',
+                )}
+              />
               <span className="flex-1">{item.label}</span>
               {item.soon && (
                 <span className="text-[9px] uppercase tracking-wider text-gray-400 border border-gray-200 rounded px-1 py-0.5">
@@ -136,10 +144,10 @@ export function Sidebar({ role, isSuperadmin, features, tenantName, modules }: P
             </>
           )
           const className = cn(
-            'group flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition',
+            'group relative flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-all duration-150',
             active
-              ? 'bg-blue-50 text-blue-700 font-medium dark:bg-blue-500/15 dark:text-blue-300'
-              : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[var(--surface-muted)]'
+              ? 'bg-gradient-to-r from-indigo-50 to-fuchsia-50 text-indigo-700 font-semibold dark:from-indigo-500/15 dark:to-fuchsia-500/10 dark:text-indigo-200 shadow-sm shadow-indigo-500/10'
+              : 'text-gray-700 hover:bg-gray-100/80 hover:translate-x-0.5 dark:text-gray-300 dark:hover:bg-[var(--surface-muted)]',
           )
           return item.external ? (
             <a key={item.href} href={item.href} className={className}>{content}</a>

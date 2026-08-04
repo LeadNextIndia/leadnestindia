@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { LoadingSpinner } from '@/components/loading-spinner'
 
 export type LeadFormField = {
   key: string
@@ -32,6 +33,7 @@ export function LeadForm({
   const [fields, setFields] = useState<LeadFormField[]>(initialFields ?? [])
   const [values, setValues] = useState<Record<string, string>>({})
   const [tenantId, setTenantId] = useState<string | null>(null)
+  const [defaultStatus, setDefaultStatus] = useState<string | null>(null)
   const [loading, setLoading] = useState(initialFields === undefined)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -77,6 +79,15 @@ export function LeadForm({
             .maybeSingle()
 
           if (moduleRow?.id) {
+            // Resolve the module's default status for the insert.
+            const { data: defRow } = await supabase
+              .from('module_statuses')
+              .select('key')
+              .eq('module_id', moduleRow.id)
+              .eq('is_default', true)
+              .maybeSingle()
+            if (defRow?.key) setDefaultStatus(defRow.key)
+
             const { data: mfRows } = await supabase
               .from('module_fields')
               .select(
@@ -146,12 +157,14 @@ export function LeadForm({
     setError(null)
     setSaving(true)
 
-    const { error: insertError } = await supabase.from('leads').insert({
+    const insertRow: Record<string, unknown> = {
       tenant_id: tenantId,
       custom_data: values,
       source: 'web',
       module_key: moduleSlug ?? 'lead',
-    })
+    }
+    if (defaultStatus) insertRow.status = defaultStatus
+    const { error: insertError } = await supabase.from('leads').insert(insertRow)
 
     if (insertError) {
       setError(insertError.message)
@@ -246,8 +259,9 @@ export function LeadForm({
         <button
           type="submit"
           disabled={saving}
-          className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-medium rounded-md px-4 py-2 transition"
+          className="brand-gradient disabled:opacity-60 text-white text-sm font-semibold rounded-full px-5 py-2 transition-all inline-flex items-center gap-2 shadow-md shadow-indigo-500/25 hover:shadow-lg hover:shadow-indigo-500/40 active:scale-[0.98]"
         >
+          {saving && <LoadingSpinner size="sm" className="text-white" />}
           {saving ? 'Saving…' : submitLabel}
         </button>
         {onCancel && (

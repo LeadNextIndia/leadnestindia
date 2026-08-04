@@ -70,7 +70,7 @@ export default async function DashboardLayout({
       />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 border-b border-gray-200 dark:border-[var(--border)] bg-white dark:bg-[var(--surface)] flex items-center justify-between px-6">
+        <header className="h-14 border-b border-gray-200/70 dark:border-[var(--border)] bg-white/60 dark:bg-[var(--surface)]/70 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-10">
           <div className="flex items-center gap-3 min-w-0">
             {tenantName ? (
               <>
@@ -78,18 +78,18 @@ export default async function DashboardLayout({
                   {tenantName}
                 </span>
                 {!session.isSuperadmin && session.role && (
-                  <span className="text-[10px] uppercase tracking-wider bg-gray-100 dark:bg-[var(--surface-muted)] text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-[var(--border)] rounded px-1.5 py-0.5">
+                  <span className="text-[10px] uppercase tracking-wider bg-gray-100 dark:bg-[var(--surface-muted)] text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-[var(--border)] rounded-full px-2 py-0.5">
                     {session.role}
                   </span>
                 )}
                 {session.isSuperadmin && (
-                  <span className="text-[10px] uppercase tracking-wider bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-500/30 rounded px-1.5 py-0.5">
+                  <span className="text-[10px] uppercase tracking-wider brand-gradient text-white rounded-full px-2 py-0.5 shadow-sm shadow-indigo-500/25">
                     Superadmin
                   </span>
                 )}
               </>
             ) : session.isSuperadmin ? (
-              <span className="text-[10px] uppercase tracking-wider bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-500/30 rounded px-1.5 py-0.5">
+              <span className="text-[10px] uppercase tracking-wider brand-gradient text-white rounded-full px-2 py-0.5 shadow-sm shadow-indigo-500/25">
                 Superadmin
               </span>
             ) : null}
@@ -102,7 +102,7 @@ export default async function DashboardLayout({
             <LogoutButton />
             <div
               title={session.user.email ?? undefined}
-              className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-white text-xs font-semibold flex items-center justify-center"
+              className="w-8 h-8 rounded-full brand-gradient text-white text-xs font-semibold flex items-center justify-center shadow-md shadow-indigo-500/25 ring-2 ring-white dark:ring-[var(--surface)]"
             >
               {initial}
             </div>

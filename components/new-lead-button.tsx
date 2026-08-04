@@ -32,7 +32,8 @@ export function NewLeadButton({ moduleSlug, moduleSingular }: Props = {}) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md px-3 py-1.5 transition"
+        data-pop
+        className="inline-flex items-center gap-1.5 text-sm brand-gradient text-white rounded-full px-4 py-2 font-medium shadow-md shadow-indigo-500/25 hover:shadow-lg hover:shadow-indigo-500/40 active:scale-[0.98] transition-all"
       >
         <PlusIcon className="w-4 h-4" /> New {label}
       </button>
